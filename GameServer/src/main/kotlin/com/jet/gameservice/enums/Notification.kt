@@ -20,6 +20,6 @@ enum class Notification(val text: String, val code: String) {
     GAME_IS_BUSY_WITH_TWO_PLAYERS(
         "The game is busy with two players. Please try again later",
         "GAME_IS_BUSY_WITH_TWO_PLAYERS"
-    );
+    )
 
 }

@@ -70,7 +70,7 @@ class GameImpl(private val webSocketMessageSendingService: WebSocketMessageSendi
             if (gameMove.added == null) {
                 throw GameException(Error.PARAMETER_IS_NULL, "added")
             }
-            if ((lastResultingNumber + gameMove.added!!) % 3 !== 0) {
+            if ((lastResultingNumber + gameMove.added!!) % 3 != 0) {
                 throw GameException(Error.NOT_DIVISIBLE_BY_3, lastResultingNumber + gameMove.added!!)
             }
             gameMove.resultingNumber = lastResultingNumber

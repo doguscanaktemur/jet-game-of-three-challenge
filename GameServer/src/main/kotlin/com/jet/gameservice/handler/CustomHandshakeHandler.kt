@@ -23,7 +23,7 @@ class CustomHandshakeHandler(private val game: Game) : DefaultHandshakeHandler()
         request: ServerHttpRequest,
         wsHandler: WebSocketHandler,
         attributes: MutableMap<String, Any>
-    ): Principal? {
+    ): Principal {
         val servletRequest = request as ServletServerHttpRequest
         val session: HttpSession = servletRequest.servletRequest.session
         var user = session.getAttribute("socketUserName") as String?

@@ -14,7 +14,7 @@
     <name>GameServer</name>
     <description>GameServer</description>
     <properties>
-        <java.version>22</java.version>
+        <java.version>17</java.version>
         <kotlin.version>1.9.23</kotlin.version>
     </properties>
     <dependencies>

@@ -25,7 +25,7 @@ class GameController {
     @Autowired
     private lateinit var webSocketMessageSendingService: WebSocketMessageSendingService
 
-    /************************** WebSocket endpoints  */
+    //WebSocket endpoints
     @MessageMapping("/send")
     fun gameMove(gameMoveDto: GameMoveDto, headerAccessor: SimpMessageHeaderAccessor) {
         LOGGER.debug("gameMoveDto={}", gameMoveDto)
@@ -57,7 +57,7 @@ class GameController {
         return errorMessageResponseDto
     }
 
-    /************************** Rest endpoint  */
+    // Rest endpoint
     @GetMapping("/game/first-player")
     fun isFirstToPlay(@RequestHeader("socketUserName") socketUserName: String): FirstUserToPlayResponseDto {
         if (LOGGER.isDebugEnabled) {

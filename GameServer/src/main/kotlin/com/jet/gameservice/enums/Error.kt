@@ -5,10 +5,6 @@ enum class Error(val message: String, val code: String) {
         "This is not your turn.",
         "NOT_YOUR_TURN"
     ),
-    RESULTING_NUMBER_NOT_INTEGER(
-        "The resulting number '%s' is not an integer.",
-        "RESULTING_NUMBER_NOT_INTEGER"
-    ),
     RESULTING_NUMBER_TOO_SMALL(
         "The resulting number '%d' is less than 2.",
         "RESULTING_NUMBER_TOO_SMALL"
@@ -28,6 +24,6 @@ enum class Error(val message: String, val code: String) {
     PARAMETER_IS_NULL(
         "The parameter '%s' can't be null.",
         "PARAMETER_IS_NULL"
-    );
+    )
 
 }

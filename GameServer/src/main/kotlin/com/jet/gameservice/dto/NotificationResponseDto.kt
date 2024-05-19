@@ -2,12 +2,6 @@ package com.jet.gameservice.dto
 
 import com.jet.gameservice.enums.Notification
 
-class NotificationResponseDto(notificationEnum: Notification) {
-    val text: String
-    val code: String
-
-    init {
-        this.text = notificationEnum.text
-        this.code = notificationEnum.code
-    }
+data class NotificationResponseDto(var text: String? = null, var code: String? = null) {
+    constructor(notificationEnum: Notification) : this(notificationEnum.text, notificationEnum.code)
 }

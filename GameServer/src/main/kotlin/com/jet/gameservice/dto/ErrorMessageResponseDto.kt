@@ -2,34 +2,16 @@ package com.jet.gameservice.dto
 
 import com.jet.gameservice.exception.GameException
 
-class ErrorMessageResponseDto {
-    var errorMessage: String?
-        private set
-    var errorCode = "UNKNOWN"
-        private set
-
-    constructor(errorMessage: String?, errorCode: String) : super() {
-        this.errorMessage = errorMessage
-        this.errorCode = errorCode
-    }
-
-    constructor(t: Throwable) {
-        errorMessage = t.message
-        if (t is GameException) {
-            val ge: GameException = t
-            if (ge.errorCode != null) {
-                errorCode = ge.errorCode!!
-            }
-        }
-    }
+data class ErrorMessageResponseDto(
+    val errorMessage: String?,
+    val errorCode: String = "UNKNOWN"
+) {
+    constructor(t: Throwable) : this(
+        errorMessage = t.message,
+        errorCode = if (t is GameException && t.errorCode != null) t.errorCode!! else "UNKNOWN"
+    )
 
     override fun toString(): String {
-        val builder = StringBuilder()
-        builder.append("ErrorMessageResponseDto [errorMessage=")
-        builder.append(errorMessage)
-        builder.append(", errorCode=")
-        builder.append(errorCode)
-        builder.append("]")
-        return builder.toString()
+        return "ErrorMessageResponseDto(errorMessage=$errorMessage, errorCode=$errorCode)"
     }
 }
