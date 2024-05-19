@@ -1,4 +1,4 @@
-package com.jet.gameclient.client
+package com.jet.gameclient.service
 
 import com.jet.gameclient.dto.FirstUserToPlayResponseDto
 import org.springframework.cloud.openfeign.FeignClient

@@ -1,13 +1,15 @@
 package com.jet.gameclient
 
-import com.jet.gameclient.client.WebSocketClient
+import com.jet.gameclient.service.GameService
 import org.springframework.boot.CommandLineRunner
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import java.util.*
 
 
 @Component
-class GameCommandLineRunner(private val webSocketClient: WebSocketClient) : CommandLineRunner {
+@Profile("!test")
+class GameCommandLineRunner(private val gameService: GameService) : CommandLineRunner {
 
     @Volatile
     private var gameEnded = false
@@ -22,7 +24,7 @@ class GameCommandLineRunner(private val webSocketClient: WebSocketClient) : Comm
         println("automatic - Start automatic game mode")
         println("exit - Exit the application")
 
-        webSocketClient.gameEndedCallback = {
+        gameService.gameEndedCallback = {
             gameEnded = true
             println("Game ended.")
         }
@@ -40,14 +42,14 @@ class GameCommandLineRunner(private val webSocketClient: WebSocketClient) : Comm
                     println("Manual game mode selected")
 
                     gameEnded = false
-                    webSocketClient.startManualGame()
+                    gameService.startManualGame()
                     handleManualGame(scanner)
                 }
                 input.equals("automatic", ignoreCase = true) -> {
                     println("Automatic game mode selected")
 
                     gameEnded = false
-                    webSocketClient.startAutomaticGame()
+                    gameService.startAutomaticGame()
                 }
                 input.equals("exit", ignoreCase = true) -> {
                     println("Exiting the application")
@@ -67,7 +69,7 @@ class GameCommandLineRunner(private val webSocketClient: WebSocketClient) : Comm
             println("Your move: ")
             val move = scanner.nextLine().trim()
             if (!gameEnded) {
-                webSocketClient.sendMessage(move.toInt())
+                gameService.sendMessage(move.toInt())
             }
         }
         println("Exiting manual game mode. Please enter your command:")

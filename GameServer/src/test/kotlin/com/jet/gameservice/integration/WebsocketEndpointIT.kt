@@ -24,12 +24,14 @@ class WebsocketEndpointIT {
 
     @LocalServerPort
     private val port: Int? = null
-    private var URL: String? = null
+    private lateinit var url: String
 
-    private val SEND_AFTER_CONNECT_ENDPOINT = "/app/after_connect"
-    private val SEND_GAME_MOVE_ENDPOINT = "/app/send"
-    private val SUBSCRIBE_NOTIFICATIONS_ENDPOINT = "/user/queue/notifications"
-    private val SUBSCRIBE_GAME_MOVES_ENDPOINT = "/user/queue/game_moves"
+    companion object {
+        val SEND_AFTER_CONNECT_ENDPOINT = "/app/after_connect"
+        val SEND_GAME_MOVE_ENDPOINT = "/app/send"
+        val SUBSCRIBE_NOTIFICATIONS_ENDPOINT = "/user/queue/notifications"
+        val SUBSCRIBE_GAME_MOVES_ENDPOINT = "/user/queue/game_moves"
+    }
 
     lateinit var notificationCompletableFuture: CompletableFuture<NotificationResponseDto>
     lateinit var gameMoveCompletableFuture: CompletableFuture<GameMoveDto>
@@ -38,7 +40,7 @@ class WebsocketEndpointIT {
     fun setup() {
         notificationCompletableFuture = CompletableFuture<NotificationResponseDto>()
         gameMoveCompletableFuture = CompletableFuture<GameMoveDto>()
-        URL = "ws://localhost:$port/websocket"
+        url = "ws://localhost:$port/websocket"
     }
 
 
@@ -47,7 +49,7 @@ class WebsocketEndpointIT {
         val stompClient = WebSocketStompClient(StandardWebSocketClient())
         stompClient.messageConverter = MappingJackson2MessageConverter()
 
-        val stompSession = stompClient.connectAsync(URL!!, object : StompSessionHandlerAdapter() {})
+        val stompSession = stompClient.connectAsync(url!!, object : StompSessionHandlerAdapter() {})
             .get(1, DurationUnit.SECONDS.toTimeUnit())
         stompSession.subscribe(SUBSCRIBE_NOTIFICATIONS_ENDPOINT, object : StompFrameHandler {
             override fun getPayloadType(headers: StompHeaders): Type {
@@ -83,19 +85,19 @@ class WebsocketEndpointIT {
         val stompClient1 = WebSocketStompClient(StandardWebSocketClient())
         stompClient1.messageConverter = MappingJackson2MessageConverter()
 
-        stompClient1.connectAsync(URL!!, object : StompSessionHandlerAdapter() {})
+        stompClient1.connectAsync(url!!, object : StompSessionHandlerAdapter() {})
             .get(1, DurationUnit.SECONDS.toTimeUnit())
 
         val stompClient2 = WebSocketStompClient(StandardWebSocketClient())
         stompClient2.messageConverter = MappingJackson2MessageConverter()
 
-        stompClient1.connectAsync(URL!!, object : StompSessionHandlerAdapter() {})
+        stompClient1.connectAsync(url!!, object : StompSessionHandlerAdapter() {})
             .get(1, DurationUnit.SECONDS.toTimeUnit())
 
         val stompClient3 = WebSocketStompClient(StandardWebSocketClient())
         stompClient3.messageConverter = MappingJackson2MessageConverter()
 
-        val stompSession3 = stompClient1.connectAsync(URL!!, object : StompSessionHandlerAdapter() {})
+        val stompSession3 = stompClient1.connectAsync(url!!, object : StompSessionHandlerAdapter() {})
             .get(1, DurationUnit.SECONDS.toTimeUnit())
 
         stompSession3.subscribe(SUBSCRIBE_NOTIFICATIONS_ENDPOINT, object : StompFrameHandler {

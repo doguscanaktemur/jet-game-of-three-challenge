@@ -14,7 +14,7 @@
     <name>GameClient</name>
     <description>GameClient</description>
     <properties>
-        <java.version>22</java.version>
+        <java.version>17</java.version>
         <kotlin.version>1.9.23</kotlin.version>
     </properties>
     <dependencies>
@@ -43,6 +43,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.wiremock</groupId>
+            <artifactId>wiremock-standalone</artifactId>
+            <version>3.5.4</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

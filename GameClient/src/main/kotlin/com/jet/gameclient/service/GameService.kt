@@ -1,4 +1,4 @@
-package com.jet.gameclient.client
+package com.jet.gameclient.service
 
 import com.jet.gameclient.dto.ErrorMessageResponseDto
 import com.jet.gameclient.dto.GameMoveDto
@@ -6,9 +6,10 @@ import com.jet.gameclient.dto.NotificationResponseDto
 import jakarta.annotation.PreDestroy
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Profile
 import org.springframework.messaging.converter.MappingJackson2MessageConverter
 import org.springframework.messaging.simp.stomp.*
-import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
 import org.springframework.web.socket.client.standard.StandardWebSocketClient
 import org.springframework.web.socket.messaging.WebSocketStompClient
 import java.lang.reflect.Type
@@ -17,16 +18,17 @@ import java.time.format.DateTimeFormatter
 import java.util.concurrent.CompletableFuture
 
 
-@Component
-class WebSocketClient(@Value("\${websocket.connection.url}") private val url: String) {
+@Service
+@Profile("!test")
+class GameService(@Value("\${websocket.connection.url}") private val url: String) {
 
     companion object {
         val VALID_ADDED_VALUES = arrayOf(-1, 0, 1)
     }
 
-    private var isManualPlay = true
-    private var numOfGameMove = 0
-    private var isFirstToPlay: Boolean = false
+    var isManualPlay = true
+    var numOfGameMove = 0
+    var isFirstToPlay: Boolean = false
     private var userName: String = ""
 
     @Autowired
@@ -47,7 +49,7 @@ class WebSocketClient(@Value("\${websocket.connection.url}") private val url: St
         connect()
     }
 
-    private fun connect() {
+    fun connect() {
         val stompClient = WebSocketStompClient(StandardWebSocketClient())
         stompClient.messageConverter = MappingJackson2MessageConverter()
         connectedFuture = CompletableFuture<StompSession>()
@@ -113,7 +115,6 @@ class WebSocketClient(@Value("\${websocket.connection.url}") private val url: St
                 exception: Throwable
             ) {
                 println("Exception: ${exception.message}")
-                // Handle exception
             }
         })
 
@@ -135,7 +136,7 @@ class WebSocketClient(@Value("\${websocket.connection.url}") private val url: St
             return
         }
 
-        var sendNum: Int = 0
+        var sendNum = 0
 
         if (numOfGameMove == 0) {
             sendNum = (10..100).random()
@@ -166,13 +167,13 @@ class WebSocketClient(@Value("\${websocket.connection.url}") private val url: St
         }
     }
 
-    private fun handleMoves(move: GameMoveDto) {
+    fun handleMoves(move: GameMoveDto) {
         ++numOfGameMove
 
-        var resultingNumber = move.resultingNumber
+        val resultingNumber = move.resultingNumber
         var added = move.added
 
-        var resultingNumberPlusAdded: Int
+        val resultingNumberPlusAdded: Int
         var resultingNumberPlusAddedDividedBy3 = 0
 
         if (added == null) {
