@@ -90,21 +90,4 @@ internal class GameServiceTest {
         verify(gameService, never()).generateAutomaticNumber(any())
     }
 
-
-//
-//    @Test
-//    fun testHandleNotifications() {
-//        val gameService = GameServiceMock()
-//        val notification = NotificationResponseDto("GAME_IS_BUSY_WITH_TWO_PLAYERS", "Game is busy")
-//        gameService.handleNotifications(notification)
-//        // Your assertions here
-//    }
-//
-//    @Test
-//    fun testDisconnect() {
-//        val gameService = GameServiceMock()
-//        gameService.disconnect()
-//        // Your assertions here
-//    }
-
 }
