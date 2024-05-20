@@ -136,6 +136,7 @@ class GameService(private val webSocketService: WebSocketService, private val ga
             "YOU_LOST" -> {
                 println("notification: ${notification.text}")
                 webSocketService.disconnect()
+                numOfGameMove = 0
                 gameEndedCallback?.invoke()
             }
             "WAIT_OTHER_USER_JOIN_GAME" -> {

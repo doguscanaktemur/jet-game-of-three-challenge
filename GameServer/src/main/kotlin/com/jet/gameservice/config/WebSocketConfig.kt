@@ -16,7 +16,6 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 class WebSocketConfig : WebSocketMessageBrokerConfigurer {
 
     override fun configureMessageBroker(registry: MessageBrokerRegistry) {
-        //TODO Use RabbitMQ as a Full External STOMP Broker
         registry.enableSimpleBroker("/queue/game_moves", "/queue/notifications", "/queue/errors")
 
         /*

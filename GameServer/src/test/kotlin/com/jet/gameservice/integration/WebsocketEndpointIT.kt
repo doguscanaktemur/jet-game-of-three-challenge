@@ -85,13 +85,13 @@ class WebsocketEndpointIT {
         val stompClient1 = WebSocketStompClient(StandardWebSocketClient())
         stompClient1.messageConverter = MappingJackson2MessageConverter()
 
-        stompClient1.connectAsync(url!!, object : StompSessionHandlerAdapter() {})
+        stompClient1.connectAsync(url, object : StompSessionHandlerAdapter() {})
             .get(1, DurationUnit.SECONDS.toTimeUnit())
 
         val stompClient2 = WebSocketStompClient(StandardWebSocketClient())
         stompClient2.messageConverter = MappingJackson2MessageConverter()
 
-        stompClient1.connectAsync(url!!, object : StompSessionHandlerAdapter() {})
+        stompClient1.connectAsync(url, object : StompSessionHandlerAdapter() {})
             .get(1, DurationUnit.SECONDS.toTimeUnit())
 
         val stompClient3 = WebSocketStompClient(StandardWebSocketClient())
