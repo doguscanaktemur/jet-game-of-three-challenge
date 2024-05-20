@@ -3,8 +3,6 @@ package com.jet.gameservice.service
 import com.jet.gameservice.dto.NotificationResponseDto
 import com.jet.gameservice.enums.Notification
 import com.jet.gameservice.model.GameMove
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.messaging.converter.MappingJackson2MessageConverter
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Service
 
@@ -15,10 +13,7 @@ interface WebSocketMessageSendingService {
 }
 
 @Service
-class WebSocketMessageSendingServiceImpl : WebSocketMessageSendingService {
-
-    @Autowired
-    private lateinit var simpMessagingTemplate: SimpMessagingTemplate
+class WebSocketMessageSendingServiceImpl(private val simpMessagingTemplate: SimpMessagingTemplate) : WebSocketMessageSendingService {
 
     override fun sendGameMoveToUser(toUser: String, gameMove: GameMove) {
         simpMessagingTemplate.convertAndSendToUser(toUser, "/queue/game_moves", gameMove)

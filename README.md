@@ -176,6 +176,7 @@ Client                          Server
 - Add more test cases to cover edge scenarios.
 - Enhance error handling and logging.
 - Use an external component that can act as an external STOMP broker. There are quite a lot of tools able to do this, but I would suggest RabbitMQ. After this change, it will not keep the subscriptions in-memory.
+- Store game entities (game, player, moves etc.) in a database. For the game events, event sourcing pattern can be used.
 
 ---
 

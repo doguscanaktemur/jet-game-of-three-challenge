@@ -17,13 +17,7 @@ import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-class GameController {
-
-    @Autowired
-    private lateinit var game: Game
-
-    @Autowired
-    private lateinit var webSocketMessageSendingService: WebSocketMessageSendingService
+class GameController(private val game: Game, private val webSocketMessageSendingService: WebSocketMessageSendingService) {
 
     //WebSocket endpoints
     @MessageMapping("/send")
