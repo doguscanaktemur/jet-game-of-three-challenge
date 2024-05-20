@@ -1,93 +1,108 @@
 package com.jet.gameclient.unit.service
 
+import com.jet.gameclient.dto.FirstUserToPlayResponseDto
 import com.jet.gameclient.dto.GameMoveDto
+import com.jet.gameclient.dto.NotificationResponseDto
 import com.jet.gameclient.service.GameServerClient
 import com.jet.gameclient.service.GameService
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
+import com.jet.gameclient.service.WebSocketService
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.Mockito.*
-import org.mockito.Spy
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.junit.jupiter.MockitoSettings
+import org.mockito.quality.Strictness
 import org.springframework.messaging.simp.stomp.StompSession
 
 
 @ExtendWith(MockitoExtension::class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 internal class GameServiceTest {
+
+    @Mock
+    private lateinit var mockSession: StompSession
 
     @Mock
     private lateinit var gameServerClient: GameServerClient
 
-    @Spy
+    @Mock
+    private lateinit var webSocketService: WebSocketService
+
     @InjectMocks
-    private var gameService: GameService = GameService("test")
+    private lateinit var gameService: GameService
 
-
-
-    @Test
-    fun testGenerateAutomaticNumber() {
-        val stompSession = mock(StompSession::class.java)
-        doReturn(stompSession).`when`(gameService).getSession()
-
-        gameService.generateAutomaticNumber(null)
-
-        verify(stompSession).send(
-            eq("/app/send"),
-            any(GameMoveDto::class.java)
-        )
+    @BeforeEach
+    fun setUp() {
+        `when`(webSocketService.getSession()).thenReturn(mockSession)
     }
 
     @Test
-    fun testStartAutomaticGame(){
-        doNothing().`when`(gameService).connect()
+    fun `test startAutomaticGame triggers automatic game logic`() {
+        `when`(gameServerClient.isFirstToPlay(anyString())).thenReturn(FirstUserToPlayResponseDto(isFirstToPlay = true))
 
         gameService.startAutomaticGame()
+        simulateConnection("testUser")
 
-        assertFalse(gameService.isManualPlay)
+        verify(webSocketService).connect()
+        verify(gameServerClient).isFirstToPlay("testUser")
+        verify(mockSession).send(anyString(), any(GameMoveDto::class.java))
     }
 
     @Test
-    fun testStartManualGame(){
-        doNothing().`when`(gameService).connect()
-
+    fun `test startManualGame does not trigger automatic game logic`() {
         gameService.startManualGame()
+        simulateConnection("testUser")
 
-        assertTrue(gameService.isManualPlay)
+        verify(webSocketService).connect()
+        verify(gameServerClient, never()).isFirstToPlay(anyString())
+        verify(mockSession, never()).send(anyString(), any(GameMoveDto::class.java))
     }
 
     @Test
-    fun testHandleMoves_AutomaticPlay() {
-        val stompSession = mock(StompSession::class.java)
-        doReturn(stompSession).`when`(gameService).getSession()
+    fun `test handleNotifications for game end`() {
+        val notification = NotificationResponseDto(code = "YOU_WON", text = "You have won the game")
 
-        val move = GameMoveDto(resultingNumber = 5, added = 2)
-        gameService.isManualPlay = false
-        gameService.numOfGameMove = 1
-        gameService.isFirstToPlay = true
+        callPrivateHandleNotifications(notification)
 
-        gameService.handleMoves(move)
-
-        // Verify behavior in automatic play mode
-        verify(stompSession).send(
-            eq("/app/send"),
-            any(GameMoveDto::class.java)
-        )
+        verify(webSocketService).disconnect()
     }
 
     @Test
-    fun testHandleMoves_ManualPlay() {
-        val move = GameMoveDto(resultingNumber = 5, added = 2)
-        gameService.isManualPlay = true
-        gameService.numOfGameMove = 2
-        gameService.isFirstToPlay = false
+    fun `test handleMoves processes game moves correctly`() {
+        `when`(gameServerClient.isFirstToPlay(anyString())).thenReturn(FirstUserToPlayResponseDto(isFirstToPlay = true))
 
-        gameService.handleMoves(move)
+        gameService.startAutomaticGame()
+        simulateConnection("testUser")
 
-        // Verify behavior in manual play mode
-        verify(gameService, never()).generateAutomaticNumber(any())
+        val move = GameMoveDto(resultingNumber = 2)
+        callPrivateHandleMoves(move)
+
+        verify(mockSession).send(anyString(), any(GameMoveDto::class.java))
+    }
+
+    // Helper method to simulate the WebSocket connection
+    private fun simulateConnection(userName: String) {
+        val onConnectedMethod = GameService::class.java.getDeclaredMethod("onConnected", String::class.java)
+        onConnectedMethod.isAccessible = true
+        onConnectedMethod.invoke(gameService, userName)
+    }
+
+    // Helper method to call private handleMoves method
+    private fun callPrivateHandleMoves(move: GameMoveDto) {
+        val handleMovesMethod = GameService::class.java.getDeclaredMethod("handleMoves", GameMoveDto::class.java)
+        handleMovesMethod.isAccessible = true
+        handleMovesMethod.invoke(gameService, move)
+    }
+
+    // Helper method to call private handleNotifications method
+    private fun callPrivateHandleNotifications(notification: NotificationResponseDto) {
+        val handleNotificationsMethod =
+            GameService::class.java.getDeclaredMethod("handleNotifications", NotificationResponseDto::class.java)
+        handleNotificationsMethod.isAccessible = true
+        handleNotificationsMethod.invoke(gameService, notification)
     }
 
 }

@@ -69,7 +69,7 @@ class GameCommandLineRunner(private val gameService: GameService) : CommandLineR
             println("Your move: ")
             val move = scanner.nextLine().trim()
             if (!gameEnded) {
-                gameService.sendMessage(move.toInt())
+                gameService.playGameMove(move.toInt())
             }
         }
         println("Exiting manual game mode. Please enter your command:")

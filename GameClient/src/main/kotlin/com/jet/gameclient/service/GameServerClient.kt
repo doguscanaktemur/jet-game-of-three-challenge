@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestMethod
 
 
-@FeignClient(name = "game-server", url = "localhost:8080")
+@FeignClient(name = "gameServerClient")
 interface GameServerClient {
 
     @RequestMapping(method = [RequestMethod.GET], value = ["/game/first-player"])

@@ -4,8 +4,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
-class GameServiceApplication
+class GameServerApplication
 
 fun main(args: Array<String>) {
-    runApplication<GameServiceApplication>(*args)
+    runApplication<GameServerApplication>(*args)
 }

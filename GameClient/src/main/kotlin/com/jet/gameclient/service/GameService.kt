@@ -3,182 +3,87 @@ package com.jet.gameclient.service
 import com.jet.gameclient.dto.ErrorMessageResponseDto
 import com.jet.gameclient.dto.GameMoveDto
 import com.jet.gameclient.dto.NotificationResponseDto
-import jakarta.annotation.PreDestroy
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
-import org.springframework.messaging.converter.MappingJackson2MessageConverter
 import org.springframework.messaging.simp.stomp.*
 import org.springframework.stereotype.Service
-import org.springframework.web.socket.client.standard.StandardWebSocketClient
-import org.springframework.web.socket.messaging.WebSocketStompClient
-import java.lang.reflect.Type
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import java.util.concurrent.CompletableFuture
 
 
 @Service
 @Profile("!test")
-class GameService(@Value("\${websocket.connection.url}") private val url: String) {
+class GameService(private val webSocketService: WebSocketService, private val gameServerClient: GameServerClient) {
 
     companion object {
         val VALID_ADDED_VALUES = arrayOf(-1, 0, 1)
     }
 
-    var isManualPlay = true
-    var numOfGameMove = 0
-    var isFirstToPlay: Boolean = false
-    private var userName: String = ""
-
-    @Autowired
-    private lateinit var gameServerClient: GameServerClient
-
-    private var connectedFuture = CompletableFuture<StompSession>()
+    private var isManualPlay = true
+    private var numOfGameMove = 0
+    private var isFirstToPlay = false
+    private lateinit var userName: String
 
     var gameEndedCallback: (() -> Unit)? = null
 
+    init {
+        webSocketService.moveHandler = ::handleMoves
+        webSocketService.notificationHandler = ::handleNotifications
+        webSocketService.errorHandler = ::handleErrors
+        webSocketService.connectionHandler = ::onConnected
+    }
 
     fun startAutomaticGame() {
         isManualPlay = false
-        connect()
+        webSocketService.connect()
     }
 
     fun startManualGame() {
         isManualPlay = true
-        connect()
+        webSocketService.connect()
     }
 
-    fun connect() {
-        val stompClient = WebSocketStompClient(StandardWebSocketClient())
-        stompClient.messageConverter = MappingJackson2MessageConverter()
-        connectedFuture = CompletableFuture<StompSession>()
-
-        val future = stompClient.connectAsync(url, object : StompSessionHandlerAdapter() {
-            override fun afterConnected(session: StompSession, connectedHeaders: StompHeaders) {
-                userName = connectedHeaders["user-name"][0]
-                println("Connected to WebSocket server. Your username: $userName")
-                connectedFuture.complete(session)
-                session.subscribe("/user/queue/game_moves", object : StompFrameHandler {
-                    override fun getPayloadType(headers: StompHeaders): Type {
-                        return GameMoveDto::class.java
-                    }
-
-                    override fun handleFrame(headers: StompHeaders, payload: Any?) {
-                        handleMoves(payload as GameMoveDto)
-                    }
-                })
-
-                session.subscribe("/user/queue/notifications", object : StompFrameHandler {
-                    override fun getPayloadType(headers: StompHeaders): Type {
-                        return NotificationResponseDto::class.java
-                    }
-
-                    override fun handleFrame(headers: StompHeaders, payload: Any?) {
-                        handleNotifications(payload as NotificationResponseDto)
-                    }
-                })
-
-                session.subscribe("/user/queue/errors", object : StompFrameHandler {
-                    override fun getPayloadType(headers: StompHeaders): Type {
-                        return ErrorMessageResponseDto::class.java
-                    }
-
-                    override fun handleFrame(headers: StompHeaders, payload: Any?) {
-                        handleErrors(payload as ErrorMessageResponseDto)
-                    }
-                })
-
-                session.send("/app/after_connect", "player connected")
-
-                if (!isManualPlay) {
-                    isFirstToPlay = gameServerClient.isFirstToPlay(userName).isFirstToPlay ?: false
-
-                    if (isFirstToPlay) {
-                        generateAutomaticNumber()
-                    }
-                }
-            }
-
-            override fun handleTransportError(session: StompSession, exception: Throwable) {
-                println("Transport error: ${exception.message}")
-                if (!session.isConnected) {
-                    connect()
-                }
-            }
-
-            override fun handleException(
-                session: StompSession,
-                command: StompCommand?,
-                headers: StompHeaders,
-                payload: ByteArray,
-                exception: Throwable
-            ) {
-                println("Exception: ${exception.message}")
-            }
-        })
-
-        future.whenComplete { _, ex ->
-            if (ex == null) {
-                println("Connection established successfully")
-            } else {
-                println("Failed to connect: ${ex.message}")
-            }
-        }
-    }
-
-    fun getSession(): StompSession {
-        return connectedFuture.get()
-    }
-
-    fun generateAutomaticNumber(resultingNumberPlusAddedDividedBy3: Int? = null) {
-        if (resultingNumberPlusAddedDividedBy3 == 1) {
-            return
-        }
-
-        var sendNum = 0
-
-        if (numOfGameMove == 0) {
-            sendNum = (10..100).random()
-        } else {
-            for (addedValue in VALID_ADDED_VALUES) {
-                if ((resultingNumberPlusAddedDividedBy3!!.plus(addedValue)) % 3 == 0) {
-
-                    sendNum = addedValue
-                }
-            }
-
-        }
-
+    fun playGameMove(sendNum: Int) {
         sendMessage(sendNum)
     }
 
-    fun sendMessage(sendNum: Int) {
-        if (numOfGameMove == 0) {
-            getSession().send(
-                "/app/send",
-                GameMoveDto(resultingNumber = sendNum)
-            )
-        } else {
-            getSession().send(
-                "/app/send",
-                GameMoveDto(added = sendNum)
-            )
+    private fun onConnected(userName: String) {
+        this.userName = userName
+        if (!isManualPlay) {
+            isFirstToPlay = gameServerClient.isFirstToPlay(userName).isFirstToPlay ?: false
+            if (isFirstToPlay) generateAutomaticNumber()
         }
     }
 
-    fun handleMoves(move: GameMoveDto) {
+    private fun generateAutomaticNumber(resultingNumberPlusAddedDividedBy3: Int? = null) {
+        if (resultingNumberPlusAddedDividedBy3 == 1) return
+
+        val sendNum = when (numOfGameMove) {
+            0 -> (10..100).random()
+            else -> VALID_ADDED_VALUES.firstOrNull { (resultingNumberPlusAddedDividedBy3!! + it) % 3 == 0 } ?: 0
+        }
+        sendMessage(sendNum)
+    }
+
+    private fun sendMessage(sendNum: Int) {
+        val destination = "/app/send"
+        val message = if (numOfGameMove == 0) {
+            GameMoveDto(resultingNumber = sendNum)
+        } else {
+            GameMoveDto(added = sendNum)
+        }
+        webSocketService.getSession().send(destination, message)
+    }
+
+    private fun handleMoves(move: GameMoveDto) {
         ++numOfGameMove
 
         val resultingNumber = move.resultingNumber
-        var added = move.added
+        val added = move.added
 
         val resultingNumberPlusAdded: Int
         var resultingNumberPlusAddedDividedBy3 = 0
 
         if (added == null) {
-            added = 0
-
             println(
                 """
                  | New Game Move:
@@ -230,7 +135,7 @@ class GameService(@Value("\${websocket.connection.url}") private val url: String
             "YOU_WON",
             "YOU_LOST" -> {
                 println("notification: ${notification.text}")
-                disconnect()
+                webSocketService.disconnect()
                 gameEndedCallback?.invoke()
             }
             "WAIT_OTHER_USER_JOIN_GAME" -> {
@@ -248,19 +153,4 @@ class GameService(@Value("\${websocket.connection.url}") private val url: String
         println("Error: $error")
     }
 
-    fun disconnect() {
-        getSession().disconnect()
-        numOfGameMove = 0
-        println("Disconnected from the game.")
-    }
-
-    /**
-     * Unsubscribe and close connection before destroying this instance (e.g. on application shutdown).
-     */
-    @PreDestroy
-    fun onShutDown() {
-        if (getSession().isConnected) {
-            disconnect()
-        }
-    }
 }
